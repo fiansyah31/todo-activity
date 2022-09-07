@@ -13,18 +13,25 @@ function isStorageExist() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        document.querySelector('#loading').remove();
+        }, 600);
     const submitForm = document.getElementById('inputTodo');
-
+    loadDataStorage();
     submitForm.addEventListener('submit', function(event) {
         event.preventDefault();
         addTodos();
+        saveLocalStorage();
     });
-
     document.addEventListener(SAVED_EVENT, function(){
-        
+        loadDataStorage();
     })
 });
 
+function desCending(){
+    todos.sort((a,b) => b.id - a.id);
+    document.dispatchEvent(new Event(RENDER_EVENT));
+}
 function addTodos() {
     const title = document.getElementById('inputTodoTitle').value;
     const description = document.getElementById('inputTodoDescription').value;
@@ -39,7 +46,7 @@ function addTodos() {
 }
 
 function generateId(){
-    return +new Date();
+   return Date.now();
 }
 
 function generateTodoObject(id, title, description, time, isComplete){
@@ -130,6 +137,7 @@ function undoTodoCompleted(todoId){
         if(todoTaget == null) return;
 
         todoTaget.isComplete = false;
+        saveLocalStorage();
         document.dispatchEvent(new Event(RENDER_EVENT));
 }
 
@@ -139,6 +147,7 @@ function completedTodoList(todoId){
     if(todoTarget == null) return;
 
     todoTarget.isComplete = true;
+    saveLocalStorage();
     document.dispatchEvent(new Event(RENDER_EVENT));
 }
 
@@ -146,7 +155,7 @@ function removeTodos(todoId){
     const todoTaget = findDataIndex(todoId);
     if(todoTaget === -1) return;
     todos.splice(todoTaget, 1);
-
+    saveLocalStorage();
     document.dispatchEvent(new Event(RENDER_EVENT));
 }
 
@@ -167,3 +176,29 @@ function findDataIndex(todoId){
     }
     return -1;
 }
+
+function saveLocalStorage(){
+    const jsonStringify = JSON.stringify(todos);
+    localStorage.setItem(STORAGE_KEY, jsonStringify);
+    document.dispatchEvent(new Event(SAVED_EVENT));
+}
+
+function loadDataStorage(){
+    if(!isStorageExist()) return;
+
+    const serializeData = localStorage.getItem(STORAGE_KEY);
+    const todoSave = JSON.parse(serializeData);
+
+    if(todoSave == null) return;
+
+    todos = [];
+    tempTodos = [];
+    todoSave.map((todosObject) => {
+        desCending();
+        todos.push(todosObject);
+        tempTodos.push(todosObject);
+    });
+    document.dispatchEvent(new Event(RENDER_EVENT));
+}
+
+
